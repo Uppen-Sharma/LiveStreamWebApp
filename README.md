@@ -158,7 +158,10 @@ src/
         ├── templates/
         └── application.properties
 ```
-
+![Image](https://github.com/user-attachments/assets/8a98a0c2-8138-43d6-86f2-4791aa70e17e)
+![Image](https://github.com/user-attachments/assets/cbc0adf7-f88b-4a20-9d4e-c7bbdddd6efd)
+![Image](https://github.com/user-attachments/assets/a9ad8fed-a1a2-4d48-b829-e131750140f3)
+![Image](https://github.com/user-attachments/assets/147542ed-0ce4-430e-bd26-e061946afc47)
 ---
 
 ## 🤝 Contributing
