@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stream Test</title>
+    <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .video-container {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .warning { background-color: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stream Test Page</h1>
+        
+        <div id="status" class="status warning">
+            Testing stream connection...
+        </div>
+        
+        <div class="video-container">
+            <video id="testPlayer" class="video-js vjs-default-skin vjs-big-play-centered" controls autoplay style="width: 100%; height: 100%;">
+                <source src="http://localhost:90/hls/stream.m3u8" type="application/x-mpegURL">
+                <source src="http://localhost:90/hls/stream_high.m3u8" type="application/x-mpegURL">
+                <source src="http://localhost:90/hls/stream_medium.m3u8" type="application/x-mpegURL">
+                <source src="http://localhost:90/hls/stream_low.m3u8" type="application/x-mpegURL">
+            </video>
+        </div>
+        
+        <div>
+            <h3>Test Results:</h3>
+            <ul id="testResults">
+                <li>Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const testResults = document.getElementById('testResults');
+        const results = [];
+
+        function updateStatus(message, type) {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function addResult(message, success) {
+            results.push({ message, success });
+            testResults.innerHTML = results.map(r => 
+                `<li style="color: ${r.success ? 'green' : 'red'}">${r.message}</li>`
+            ).join('');
+        }
+
+        // Test 1: Check if nginx is accessible
+        fetch('http://localhost:90/hls/stream.m3u8', { method: 'HEAD' })
+            .then(response => {
+                if (response.ok) {
+                    addResult('✓ Nginx server is accessible', true);
+                } else {
+                    addResult('✗ Nginx server returned error: ' + response.status, false);
+                }
+            })
+            .catch(error => {
+                addResult('✗ Cannot connect to nginx server: ' + error.message, false);
+            });
+
+        // Test 2: Initialize video player
+        try {
+            const player = videojs('testPlayer', {
+                controls: true,
+                autoplay: true,
+                preload: 'auto'
+            });
+
+            addResult('✓ Video.js player initialized successfully', true);
+
+            // Test 3: Video player events
+            player.on('loadstart', () => {
+                addResult('✓ Video player: Load started', true);
+            });
+
+            player.on('loadeddata', () => {
+                addResult('✓ Video player: Data loaded successfully', true);
+                updateStatus('Stream is working correctly!', 'success');
+            });
+
+            player.on('canplay', () => {
+                addResult('✓ Video player: Can start playing', true);
+            });
+
+            player.on('error', () => {
+                const error = player.error();
+                addResult('✗ Video player error: ' + (error ? error.message : 'Unknown error'), false);
+                updateStatus('Stream has errors. Check nginx configuration.', 'error');
+            });
+
+            // Test 4: Check if stream files exist
+            setTimeout(() => {
+                fetch('http://localhost:90/hls/stream.m3u8')
+                    .then(response => response.text())
+                    .then(content => {
+                        if (content.includes('#EXTM3U')) {
+                            addResult('✓ HLS playlist is valid', true);
+                        } else {
+                            addResult('✗ HLS playlist is invalid', false);
+                        }
+                    })
+                    .catch(error => {
+                        addResult('✗ Cannot load HLS playlist: ' + error.message, false);
+                    });
+            }, 2000);
+
+        } catch (error) {
+            addResult('✗ Error initializing video player: ' + error.message, false);
+            updateStatus('Failed to initialize video player', 'error');
+        }
+    </script>
+</body>
+</html> 

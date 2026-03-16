@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Streaming Web Application</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <link href="https://vjs.zencdn.net/8.3.0/video-js.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="flex items-center">
+                <i class="fas fa-broadcast-tower text-[#D4A373] mr-3 text-2xl"></i>
+                <span>Live Streaming Web Application</span>
+            </h1>
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <span id="streamStatus" class="flex items-center">
+                        <i class="fas fa-circle text-xs mr-1"></i>
+                        LIVE
+                    </span>
+                </div>
+                <button id="recordButton" class="flex items-center space-x-2">
+                    <i class="fas fa-record-vinyl"></i>
+                    <span id="recordText">Record</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 flex-grow">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col xl:flex-row gap-8">
+                <div class="flex-1">
+                    <!-- Fixed Video Container -->
+                    <div class="video-container p-4 mb-8" style="height: 500px; min-height: 500px; max-height: 500px;">
+                        <video id="videoPlayer" class="video-js vjs-default-skin vjs-big-play-centered" controls autoplay style="width: 100%; height: 100%;">
+                            <source src="http://localhost:90/hls/live/stream.m3u8" type="application/x-mpegURL">
+                        </video>
+                    </div>
+
+                    <!-- Quality Controls Section -->
+                    <div class="stat-card p-6 mb-8" id="qualityControlsSection">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Quality Controls</h2>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-medium">Current Quality:</span>
+                                    <span id="currentQuality" class="px-2 py-1 bg-[#D4A373] text-white rounded text-sm">Auto</span>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm font-medium">Bandwidth:</span>
+                                    <span id="currentBandwidth" class="px-2 py-1 bg-[#CCD5AE] text-[#2C3E50] rounded text-sm">-- kbps</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quality Selector -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <h3 class="text-lg font-semibold mb-3">Quality Settings</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="radio" name="quality" value="auto" checked class="quality-radio">
+                                            <span>Auto (Adaptive)</span>
+                                        </label>
+                                        <span class="text-sm text-gray-500">Best available</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="radio" name="quality" value="high" class="quality-radio">
+                                            <span>High (1080p)</span>
+                                        </label>
+                                        <span class="text-sm text-gray-500">5000 kbps</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="radio" name="quality" value="medium" class="quality-radio">
+                                            <span>Medium (720p)</span>
+                                        </label>
+                                        <span class="text-sm text-gray-500">2500 kbps</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <label class="flex items-center space-x-2">
+                                            <input type="radio" name="quality" value="low" class="quality-radio">
+                                            <span>Low (480p)</span>
+                                        </label>
+                                        <span class="text-sm text-gray-500">1000 kbps</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4 space-y-3">
+                                    <div class="flex items-center space-x-2">
+                                        <input type="checkbox" id="autoSwitch" checked class="form-checkbox">
+                                        <label for="autoSwitch" class="text-sm">Auto-switch based on bandwidth</label>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <label class="text-sm">Bandwidth threshold:</label>
+                                        <input type="number" id="bandwidthThreshold" value="5000" min="1000" max="10000" class="form-input w-20 text-sm">
+                                        <span class="text-sm">kbps</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="text-lg font-semibold mb-3">Quality Recording</h3>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">Record in current quality:</span>
+                                        <button id="qualityRecordBtn" class="btn-primary text-sm">
+                                            <i class="fas fa-record-vinyl mr-1"></i>
+                                            Start Recording
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm">Record all qualities:</span>
+                                        <button id="multiQualityRecordBtn" class="btn-secondary text-sm">
+                                            <i class="fas fa-layer-group mr-1"></i>
+                                            Record All
+                                        </button>
+                                    </div>
+                                    <div id="recordingStatus" class="hidden">
+                                        <div class="flex items-center space-x-2 text-sm">
+                                            <i class="fas fa-circle text-red-500 animate-pulse"></i>
+                                            <span>Recording in progress...</span>
+                                            <span id="recordingTime" class="font-mono">00:00</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-4">
+                                    <h4 class="text-md font-semibold mb-2">Quality Analytics</h4>
+                                    <div class="grid grid-cols-2 gap-3 text-sm">
+                                        <div class="stat-card p-3">
+                                            <div class="flex items-center justify-between">
+                                                <span>Avg Latency:</span>
+                                                <span id="avgLatency" class="font-mono">-- ms</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card p-3">
+                                            <div class="flex items-center justify-between">
+                                                <span>Packet Loss:</span>
+                                                <span id="packetLoss" class="font-mono">--%</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card p-3">
+                                            <div class="flex items-center justify-between">
+                                                <span>Switches:</span>
+                                                <span id="switchCount" class="font-mono">0</span>
+                                            </div>
+                                        </div>
+                                        <div class="stat-card p-3">
+                                            <div class="flex items-center justify-between">
+                                                <span>Errors:</span>
+                                                <span id="errorCount" class="font-mono">0</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quality Switch History -->
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold mb-3">Recent Quality Switches</h3>
+                            <div id="qualitySwitchHistory" class="space-y-2 max-h-32 overflow-y-auto">
+                                <p class="text-gray-500 text-center py-4">No quality switches yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card p-6 mb-8" id="recordingsSection">
+                        <h2 class="text-xl font-bold mb-4">Recorded Streams</h2>
+                        <div id="recordingsList">
+                            <p>Loading recordings...</p>
+                        </div>
+                    </div>
+
+                    <!-- Stream Highlights & Bookmarks Section -->
+                    <div class="stat-card p-6 mb-8" id="highlightsSection">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Stream Highlights & Bookmarks</h2>
+                            <button id="createHighlightBtn" class="btn-primary flex items-center space-x-2">
+                                <i class="fas fa-star"></i>
+                                <span>Create Highlight</span>
+                            </button>
+                        </div>
+                        
+                        <!-- Create Highlight Modal -->
+                        <div id="highlightModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                            <div class="bg-white rounded-lg p-6 w-full max-w-md">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-bold">Create Highlight</h3>
+                                    <button id="closeHighlightModal" class="text-gray-500 hover:text-gray-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <form id="highlightForm">
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Title</label>
+                                        <input type="text" id="highlightTitle" class="w-full p-2 border rounded" placeholder="Enter highlight title" required>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Description</label>
+                                        <textarea id="highlightDescription" class="w-full p-2 border rounded" rows="3" placeholder="Describe this moment"></textarea>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Type</label>
+                                        <select id="highlightType" class="w-full p-2 border rounded">
+                                            <option value="HIGHLIGHT">Highlight</option>
+                                            <option value="BOOKMARK">Bookmark</option>
+                                            <option value="CLIP">Clip</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Tags (comma separated)</label>
+                                        <input type="text" id="highlightTags" class="w-full p-2 border rounded" placeholder="gaming, amazing, funny">
+                                    </div>
+                                    <div class="mb-4">
+                                        <label class="block text-sm font-medium mb-2">Current Time</label>
+                                        <div class="flex items-center space-x-2">
+                                            <span id="currentTime" class="text-lg font-mono">00:00</span>
+                                            <button type="button" id="captureTimeBtn" class="btn-secondary text-sm">
+                                                <i class="fas fa-clock"></i> Capture Current Time
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button type="submit" class="btn-primary flex-1">Create Highlight</button>
+                                        <button type="button" id="cancelHighlightBtn" class="btn-secondary flex-1">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Highlights List -->
+                        <div id="highlightsList" class="space-y-4">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex space-x-2">
+                                    <button class="filter-btn active" data-filter="all">All</button>
+                                    <button class="filter-btn" data-filter="HIGHLIGHT">Highlights</button>
+                                    <button class="filter-btn" data-filter="BOOKMARK">Bookmarks</button>
+                                    <button class="filter-btn" data-filter="CLIP">Clips</button>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <input type="text" id="highlightSearch" placeholder="Search highlights..." class="p-2 border rounded text-sm">
+                                    <button id="searchHighlightsBtn" class="btn-secondary text-sm">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div id="highlightsContainer" class="space-y-3">
+                                <p class="text-gray-500 text-center py-8">Loading highlights...</p>
+                            </div>
+                        </div>
+
+                        <!-- Highlight Detail Modal -->
+                        <div id="highlightDetailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+                            <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-lg font-bold" id="detailTitle">Highlight Details</h3>
+                                    <button id="closeDetailModal" class="text-gray-500 hover:text-gray-700">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div id="highlightDetailContent">
+                                    <!-- Content will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card p-6 mb-8">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center">
+                            <div>
+                                <h2 class="text-xl font-bold mb-2">Live Stream</h2>
+                                <p class="text-sm">Started streaming <span id="streamStartTime" th:text="${T(java.time.Duration).between(streamStartTime, T(java.time.LocalDateTime).now()).toHours() + ' hours ago'}">- hours ago</span></p>
+                            </div>
+                            <div class="flex space-x-4 mt-4 md:mt-0">
+                                <button id="likeButton" class="btn-primary flex items-center space-x-2">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    <span id="likeCount" th:text="${metrics.likes}">0</span>
+                                </button>
+                                <button id="dislikeButton" class="btn-primary flex items-center space-x-2">
+                                    <i class="fas fa-thumbs-down"></i>
+                                    <span id="dislikeCount" th:text="${metrics.dislikes}">0</span>
+                                </button>
+                                <button class="btn-primary flex items-center space-x-2">
+                                    <i class="fas fa-share"></i>
+                                    <span>Share</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stat-card p-6">
+                        <div class="flex border-b border-[#CCD5AE] mb-6">
+                            <button class="tab-btn active-tab px-6 py-4 focus:outline-none" data-tab="realtime">
+                                <i class="fas fa-chart-line mr-2"></i>Realtime
+                            </button>
+                            <button class="tab-btn px-6 py-4 focus:outline-none" data-tab="overview">
+                                <i class="fas fa-chart-bar mr-2"></i>Overview
+                            </button>
+                            <button class="tab-btn px-6 py-4 focus:outline-none" data-tab="engagement">
+                                <i class="fas fa-users mr-2"></i>Engagement
+                            </button>
+                            <button class="tab-btn px-6 py-4 focus:outline-none" data-tab="audience">
+                                <i class="fas fa-user-chart mr-2"></i>Audience
+                            </button>
+                        </div>
+                        
+                        <div class="p-4">
+                            <div id="realtime" class="tab-content block">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                                    <div class="stat-card p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <p class="text-sm">Current Viewers</p>
+                                            <i class="fas fa-users text-[#D4A373]"></i>
+                                        </div>
+                                        <p class="text-3xl font-bold mb-2" th:text="${metrics.currentViewers}">1,247</p>
+                                        <p class="text-sm text-green-600">+24 in last 5 min</p>
+                                    </div>
+                                    <div class="stat-card p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <p class="text-sm">Peak Concurrent</p>
+                                            <i class="fas fa-chart-line text-[#D4A373]"></i>
+                                        </div>
+                                        <p class="text-3xl font-bold mb-2" th:text="${metrics.peakViewers}">1,389</p>
+                                        <p class="text-sm">at 10:45 AM</p>
+                                    </div>
+                                    <div class="stat-card p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <p class="text-sm">New Followers</p>
+                                            <i class="fas fa-user-plus text-[#D4A373]"></i>
+                                        </div>
+                                        <p class="text-3xl font-bold mb-2" th:text="${metrics.newFollowers}">86</p>
+                                        <p class="text-sm text-green-600">+12% from last stream</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-container">
+                                    <div class="flex items-center justify-between mb-4">
+                                        <h3 class="text-lg font-semibold">Viewer Count (Last 30 minutes)</h3>
+                                        <div class="flex items-center space-x-2">
+                                            <button class="text-sm text-[#D4A373] hover:text-[#CCD5AE]">
+                                                <i class="fas fa-sync-alt mr-1"></i>Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="h-64">
+                                        <canvas id="viewerChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="overview" class="tab-content hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                                    <div class="stat-card">
+                                        <p>Total Views</p>
+                                        <p>24,389</p>
+                                        <p>+12% from last stream</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Avg. Watch Time</p>
+                                        <p>18:24</p>
+                                        <p>+5% from last stream</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Peak Viewers</p>
+                                        <p th:text="${metrics.peakViewers}">1,389</p>
+                                        <p>+8% from last stream</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Chat Messages</p>
+                                        <p th:text="${chatMessages.size()}">2,847</p>
+                                        <p>+15% from last stream</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-container">
+                                    <h3>Stream Performance History</h3>
+                                    <div class="h-64">
+                                        <canvas id="performanceChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="engagement" class="tab-content hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div class="stat-card">
+                                        <p>Engagement Rate</p>
+                                        <p>8.7%</p>
+                                        <p class="text-green-600">+1.2% from avg</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Like/Dislike Ratio</p>
+                                        <p id="likeRatio" th:text="${metrics.likeRatio + '%'}">--</p>
+                                        <p>+5% from last stream</p>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Chat Activity</p>
+                                        <p>47 msg/min</p>
+                                        <p>+12% from last stream</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="chart-container">
+                                        <h3>Interactions</h3>
+                                        <div class="h-64">
+                                            <canvas id="interactionsChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="chart-container">
+                                        <h3>Audience Retention</h3>
+                                        <div class="h-64">
+                                            <canvas id="retentionChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="audience" class="tab-content hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div class="stat-card">
+                                        <p>Geographic Distribution</p>
+                                        <ul class="geographic-list mt-4">
+                                            <li><span>India</span><span>42%</span></li>
+                                            <li><span>United States</span><span>15%</span></li>
+                                            <li><span>Germany</span><span>8%</span></li>
+                                            <li><span>Brazil</span><span>7%</span></li>
+                                            <li><span>Others</span><span>28%</span></li>
+                                        </ul>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Age Demographics</p>
+                                        <div class="h-32 mt-4">
+                                            <canvas id="ageChart"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <p>Device Type</p>
+                                        <div class="h-32 mt-4">
+                                            <canvas id="deviceChart"></canvas>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="chart-container">
+                                    <h3>Viewer Loyalty</h3>
+                                    <div class="h-64">
+                                        <canvas id="loyaltyChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="xl:w-96">
+                    <div class="stat-card p-6 mb-6">
+                        <h3 class="text-lg font-semibold mb-4">Stream Metrics</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm">Likes</p>
+                                    <i class="fas fa-thumbs-up text-[#D4A373]"></i>
+                                </div>
+                                <p class="text-2xl font-bold" id="likeDisplay" th:text="${metrics.likes}">0</p>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm">Dislikes</p>
+                                    <i class="fas fa-thumbs-down text-[#D4A373]"></i>
+                                </div>
+                                <p class="text-2xl font-bold" id="dislikeDisplay" th:text="${metrics.dislikes}">0</p>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm">Like Ratio</p>
+                                    <i class="fas fa-chart-pie text-[#D4A373]"></i>
+                                </div>
+                                <p class="text-2xl font-bold" id="likeRatioDisplay" th:text="${metrics.likeRatio + '%'}">0%</p>
+                            </div>
+                            <div class="stat-card p-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <p class="text-sm">New Followers</p>
+                                    <i class="fas fa-user-plus text-[#D4A373]"></i>
+                                </div>
+                                <p class="text-2xl font-bold" th:text="${metrics.newFollowers}">86</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Top Chatters Section -->
+                    <div class="stat-card p-6 mb-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Top Chatters</h3>
+                            <button id="refreshTopChatters" class="text-sm text-[#D4A373] hover:text-[#CCD5AE]">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div id="topChattersList" class="space-y-3" style="max-height: 200px; overflow-y: auto;">
+                            <div th:each="chatter : ${topChatters}" class="stat-card p-3 flex justify-between items-center hover:bg-[#FAEDCD] transition-colors">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 rounded-full bg-[#D4A373] flex items-center justify-center text-white text-sm font-bold">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-sm" th:text="${chatter.username}">Username</span>
+                                        <span class="text-xs text-gray-500" th:text="${chatter.messageCount + ' messages'}">0 messages</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-bold text-[#D4A373]" th:text="${chatter.messageCount}">0</span>
+                                </div>
+                            </div>
+                            <!-- Empty state -->
+                            <div id="noTopChatters" class="text-center py-8 text-gray-500" th:if="${#lists.isEmpty(topChatters)}">
+                                <i class="fas fa-users text-2xl mb-2"></i>
+                                <p class="text-sm">No chat activity yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Chat Section -->
+                    <div class="chat-container p-6" style="height: 400px; display: flex; flex-direction: column;">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-semibold">Live Chat</h3>
+                            <div class="flex items-center space-x-2">
+                                <span id="chatStatus" class="flex items-center text-sm text-green-600">
+                                    <i class="fas fa-circle text-xs mr-1"></i>
+                                    Connected
+                                </span>
+                                <button id="clearChat" class="text-sm text-[#D4A373] hover:text-[#CCD5AE]">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="chatMessages" class="flex-1 overflow-y-auto mb-4 space-y-2" style="min-height: 250px;">
+                            <div th:each="message : ${chatMessages}" class="chat-message">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-sm font-medium text-[#D4A373]" th:text="${message.username}">Username</span>
+                                    <span class="text-xs text-gray-500" th:text="${message.timestamp}">Timestamp</span>
+                                </div>
+                                <p class="text-[#2C3E50] text-sm" th:text="${message.content}">Message content</p>
+                            </div>
+                            <!-- Empty state -->
+                            <div id="noChatMessages" class="text-center py-8 text-gray-500" th:if="${#lists.isEmpty(chatMessages)}">
+                                <i class="fas fa-comments text-2xl mb-2"></i>
+                                <p class="text-sm">No messages yet</p>
+                                <p class="text-xs">Be the first to chat!</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex space-x-2 mt-auto">
+                            <input id="chatInput" type="text" placeholder="Type a message..." class="chat-input flex-grow" maxlength="200">
+                            <button id="sendChatButton" class="btn-primary px-4">
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="mt-2 text-xs text-gray-500 text-center">
+                            <span id="chatCharacterCount">0/200</span> characters
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="p-4">
+        <div class="container mx-auto text-center">
+            <p class="text-sm">&copy; 2024 Live Streaming Application. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://vjs.zencdn.net/8.3.0/video.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs/lib/stomp.min.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

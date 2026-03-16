@@ -1,0 +1,67 @@
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+#videoPlayer {
+    width: 100%;
+    height: 500px; 
+    background-color: #000;
+}
+
+.vjs-container {
+    aspect-ratio: 16/9 !important;
+}
+
+.aspect-video {
+    aspect-ratio: 16/9;
+}
+
+#chatMessages {
+    scrollbar-width: thin;
+    scrollbar-color: #4a5568 #2d3748;
+}
+
+#chatMessages::-webkit-scrollbar {
+    width: 8px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+    background: #2d3748;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+    background-color: #4a5568;
+    border-radius: 4px;
+}
+
+.tab-btn {
+    transition: background-color 0.2s ease;
+}
+
+.tab-btn:hover {
+    background-color: #4a5568;
+}
+
+.active-tab {
+    background-color: #4a5568;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.block {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    #videoPlayer {
+        height: 400px;
+    }
+}
+
+@media (max-width: 480px) {
+    #videoPlayer {
+        height: 300px;
+    }
+}

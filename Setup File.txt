@@ -1,0 +1,69 @@
+(Using XAMPP)
+(NOT Required if only viewing live stream)
+(Required for all other Dynamic aspects -Like, Dislike, Ratio, Management, Realtime, Overview, Engagement, Audience, Graph -etc)
+
+1. Install Required Tools
+
+        VS Code (or any IDE of your choice)
+
+        XAMPP (for MySQL Database)
+
+        Spring Boot (Java Framework)
+
+        Maven (Dependency Management)
+
+        Nginx with RTMP Module (For Streaming Server)
+
+        OBS Studio (For Streaming Setup)
+
+        FFmpeg (For Encoding and Transcoding)
+
+        Video.js (For Frontend Video Playback)
+
+        JDK 17, JRE 17, and Java Compiler (javac 17) (For Java Development)
+
+2. Setting up MySQL Database 
+
+        Open XAMPP Control Panel and start Apache & MySQL.
+
+        Open phpMyAdmin (http://localhost/phpmyadmin/).
+
+        Create a new database: stream.db.
+
+        Use the following Spring Boot Database Configuration in application.properties:
+
+3. Configure Nginx for RTMP Streaming
+
+        Install Nginx with RTMP Module.
+
+        Update nginx.conf file with the RTMP configuration.
+
+        Restart Nginx to apply changes.
+
+4. Configure OBS Studio
+
+        Open OBS Studio.
+
+        Go to Settings > Stream.
+
+        Set Service to Custom.
+
+        Set Server to: rtmp://localhost/live
+
+        Set Stream Key to: stream
+
+        Apply changes and start streaming.
+
+5. Integrate Video.js for Frontend Playback
+
+        Embed the .m3u8 stream into your HTML/Thymeleaf page.
+
+        Load the Video.js player.
+
+6. Run the Spring Boot Application
+
+        Open a terminal and navigate to the project folder.
+
+        Run mvn spring-boot:run.
+
+        Access the application in the browser at: http://localhost:8080/live.
